@@ -1,5 +1,5 @@
 // @ts-ignore;
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 // @ts-ignore;
 import { useToast, Button, Input, Textarea, Card, CardContent, CardDescription, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 // @ts-ignore;
@@ -7,59 +7,121 @@ import { Image, Upload, Play, History } from 'lucide-react';
 
 import { ModelSelector } from '@/components/ModelSelector';
 import { ParameterPanel } from '@/components/ParameterPanel';
-const MODELS = [{
-  id: 'stable-diffusion',
-  name: 'Stable Diffusion XL',
-  type: 'image'
-}, {
-  id: 'midjourney',
-  name: 'Midjourney',
-  type: 'image'
-}, {
-  id: 'dalle',
-  name: 'DALL-E 3',
-  type: 'image'
-}, {
-  id: 'runway',
-  name: 'Runway ML',
-  type: 'video'
-}, {
-  id: 'animate-diff',
-  name: 'Animate Diffusion',
-  type: 'video'
-}];
+import { generateImage, saveGenerationHistory } from '@/utils/cloudbase';
+const MODELS = [
+  // 图像生成模型
+  {
+    id: 'seedream-4',
+    name: 'SeDream 4',
+    type: 'image',
+    description: '字节跳动最新图像生成模型',
+    provider: 'ByteDance'
+  },
+  {
+    id: 'flux-schnell',
+    name: 'FLUX Schnell',
+    type: 'image',
+    description: 'Black Forest Labs快速生成模型',
+    provider: 'Black Forest Labs'
+  },
+  {
+    id: 'imagen-4-fast',
+    name: 'Imagen 4 Fast',
+    type: 'image',
+    description: 'Google快速图像生成模型',
+    provider: 'Google'
+  },
+  {
+    id: 'qwen-image',
+    name: 'Qwen Image',
+    type: 'image',
+    description: '通义千问图像生成模型',
+    provider: 'Alibaba'
+  },
+  {
+    id: 'seedream-3',
+    name: 'SeDream 3',
+    type: 'image',
+    description: '字节跳动图像生成模型',
+    provider: 'ByteDance'
+  },
+  // 视频生成模型
+  {
+    id: 'veo-3-fast',
+    name: 'Veo 3 Fast',
+    type: 'video',
+    description: 'Google快速视频生成模型',
+    provider: 'Google'
+  },
+  {
+    id: 'seedance-1-pro',
+    name: 'SeDance 1 Pro',
+    type: 'video',
+    description: '字节跳动专业视频生成模型',
+    provider: 'ByteDance'
+  },
+  {
+    id: 'hailuo-02',
+    name: 'Hailuo 02',
+    type: 'video',
+    description: 'MiniMax海螺视频生成模型',
+    provider: 'MiniMax'
+  },
+  {
+    id: 'kling-v2.1',
+    name: 'Kling v2.1',
+    type: 'video',
+    description: '快手可灵视频生成模型',
+    provider: 'Kuaishou'
+  }
+];
 const DEFAULT_PARAMETERS = [{
-  key: 'steps',
-  label: '生成步数',
-  type: 'slider',
-  min: 20,
-  max: 100,
-  step: 1,
-  value: 50
+  key: 'aspectRatio',
+  label: '画面比例',
+  type: 'select',
+  options: [
+    { value: '1:1', label: '正方形 (1:1)', width: 1024, height: 1024 },
+    { value: '4:3', label: '标准 (4:3)', width: 1024, height: 768 },
+    { value: '3:4', label: '竖屏 (3:4)', width: 768, height: 1024 },
+    { value: '16:9', label: '宽屏 (16:9)', width: 1024, height: 576 },
+    { value: '9:16', label: '手机竖屏 (9:16)', width: 576, height: 1024 }
+  ],
+  value: '1:1',
+  description: '选择生成图像的画面比例'
 }, {
-  key: 'guidance',
-  label: '引导强度',
-  type: 'slider',
-  min: 1,
-  max: 20,
-  step: 0.1,
-  value: 7.5
+  key: 'quality',
+  label: '生成质量',
+  type: 'select',
+  options: [
+    { value: 'fast', label: '快速生成', steps: 20, guidance: 5 },
+    { value: 'standard', label: '标准质量', steps: 30, guidance: 7.5 },
+    { value: 'high', label: '高质量', steps: 50, guidance: 10 }
+  ],
+  value: 'standard',
+  description: '选择生成速度和质量的平衡'
 }, {
-  key: 'width',
-  label: '宽度',
-  type: 'input',
-  min: 512,
-  max: 1024,
-  step: 64,
-  value: 512
+  key: 'style',
+  label: '风格强度',
+  type: 'select',
+  options: [
+    { value: 'light', label: '轻微调整', strength: 0.3 },
+    { value: 'medium', label: '适中变化', strength: 0.6 },
+    { value: 'strong', label: '强烈变化', strength: 0.9 }
+  ],
+  value: 'medium',
+  description: '图生图时的变化程度，仅在图生图模式下有效'
 }, {
-  key: 'height',
-  label: '高度',
-  type: 'input',
-  min: 512,
-  max: 1024,
-  step: 64,
-  value: 512
+  key: 'duration',
+  label: '视频时长',
+  type: 'select',
+  options: [
+    { value: 3, label: '3秒 (快速)' },
+    { value: 5, label: '5秒 (标准)' },
+    { value: 8, label: '8秒 (较长)' },
+    { value: 10, label: '10秒 (长视频)' }
+  ],
+  value: 5,
+  description: '生成视频的时长，仅在视频生成模式下有效'
 }];
 export default function App(props) {
   const {
@@ -77,6 +139,11 @@ export default function App(props) {
   const [parameters, setParameters] = useState(DEFAULT_PARAMETERS);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  
+  // 确保组件正确挂载
+  useEffect(() => {
+    // 组件挂载后的初始化逻辑
+  }, []);
   const handleModelChange = modelId => {
     setSelectedModel(modelId);
   };
@@ -107,7 +174,7 @@ export default function App(props) {
       reader.readAsDataURL(file);
     }
   };
-  const generateImage = async () => {
+  const handleGenerateImage = async () => {
     if (!prompt.trim()) {
       toast({
         title: '提示词不能为空',
@@ -116,35 +183,77 @@ export default function App(props) {
       });
       return;
     }
+    
     setIsGenerating(true);
     try {
-      const params = parameters.reduce((acc, param) => {
+      // 获取当前参数值
+      const currentParams = parameters.reduce((acc, param) => {
         acc[param.key] = param.value;
         return acc;
       }, {});
 
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const mockImageUrl = `https://picsum.photos/${params.width}/${params.height}?random=${Math.random()}`;
-      setGeneratedImage(mockImageUrl);
+      // 根据简化参数计算实际技术参数
+      const aspectRatioParam = parameters.find(p => p.key === 'aspectRatio');
+      const qualityParam = parameters.find(p => p.key === 'quality');
+      const styleParam = parameters.find(p => p.key === 'style');
+      
+      const selectedAspectRatio = aspectRatioParam?.options?.find(opt => opt.value === currentParams.aspectRatio);
+      const selectedQuality = qualityParam?.options?.find(opt => opt.value === currentParams.quality);
+      const selectedStyle = styleParam?.options?.find(opt => opt.value === currentParams.style);
 
-      // 保存到历史记录
-      const historyItem = {
-        id: Date.now().toString(),
-        prompt,
+      // 构建实际的生成参数
+      const generateParams = {
+        prompt: prompt.trim(),
         model: selectedModel,
-        parameters: params,
-        imageUrl: mockImageUrl,
-        timestamp: Date.now(),
+        width: selectedAspectRatio?.width || 1024,
+        height: selectedAspectRatio?.height || 1024,
+        steps: selectedQuality?.steps || 30,
+        guidance: selectedQuality?.guidance || 7.5,
+        seed: Math.floor(Math.random() * 999999), // 自动生成随机种子
         type: activeTab
       };
 
-      // 这里应该调用数据模型保存历史记录
-      toast({
-        title: '生成成功',
-        description: '图像已生成完成'
-      });
+      // 如果是图生图或图生视频模式，添加参考图像
+      if ((activeTab === 'image-to-image' || activeTab === 'image-to-video') && referenceImage) {
+        generateParams.referenceImage = referenceImage.dataUrl;
+        if (activeTab === 'image-to-image') {
+          generateParams.strength = selectedStyle?.strength || 0.6;
+        }
+      }
+
+      // 如果是视频生成，添加时长参数
+      if (activeTab === 'image-to-video') {
+        generateParams.duration = currentParams.duration || 5;
+      }
+
+      // 调用CloudBase云函数生成图像
+      const result = await generateImage(generateParams);
+
+      if (result.success) {
+        const generationData = result.data;
+        setGeneratedImage(generationData.imageUrl);
+
+        // 保存到CloudBase数据库
+        try {
+          await saveGenerationHistory({
+            ...generationData,
+            originalParams: currentParams, // 保存用户选择的简化参数
+            technicalParams: generateParams // 保存实际的技术参数
+          });
+        } catch (saveError) {
+          console.warn('保存历史记录失败:', saveError);
+          // 不影响主流程，只是警告
+        }
+
+        toast({
+          title: '生成成功',
+          description: '图像已生成完成'
+        });
+      } else {
+        throw new Error(result.message || '生成失败');
+      }
     } catch (error) {
+      console.error('生成图像失败:', error);
       toast({
         title: '生成失败',
         description: error.message || '请稍后重试',
@@ -173,10 +282,15 @@ export default function App(props) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* 左侧模型选择 */}
           <div className="lg:col-span-1">
-            <ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} models={MODELS} />
+            <ModelSelector 
+              selectedModel={selectedModel} 
+              onModelChange={handleModelChange} 
+              models={MODELS}
+              activeTab={activeTab}
+            />
           </div>
 
           {/* 中央内容区域 */}
@@ -213,7 +327,11 @@ export default function App(props) {
                           <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => setReferenceImage(null)}>
                             移除
                           </Button>
-                        </div> : <div className="w-64 h-64 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors" onClick={() => fileInputRef.current?.click()}>
+                        </div> : <div className="w-64 h-64 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors" onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.click();
+                          }
+                        }}>
                           <div className="text-center">
                             <Upload className="h-12 w-12 mx-auto text-gray-400" />
                             <p className="text-sm text-gray-400 mt-2">点击上传参考图</p>
@@ -239,7 +357,11 @@ export default function App(props) {
                           <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => setReferenceImage(null)}>
                             移除
                           </Button>
-                        </div> : <div className="w-64 h-64 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors" onClick={() => fileInputRef.current?.click()}>
+                        </div> : <div className="w-64 h-64 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors" onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.click();
+                          }
+                        }}>
                           <div className="text-center">
                             <Image className="h-12 w-12 mx-auto text-gray-400" />
                             <p className="text-sm text-gray-400 mt-2">点击上传参考图</p>
@@ -255,7 +377,7 @@ export default function App(props) {
 
             {/* 生成按钮和预览 */}
             <div className="flex space-x-4">
-              <Button onClick={generateImage} disabled={isGenerating} className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+              <Button onClick={handleGenerateImage} disabled={isGenerating} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3">
                 {isGenerating ? <>生成中...</> : activeTab === 'image-to-video' ? <>
                     <Play className="h-4 w-4 mr-2" />
                     生成视频
@@ -279,7 +401,11 @@ export default function App(props) {
 
           {/* 右侧参数面板 */}
           <div className="lg:col-span-1">
-            <ParameterPanel parameters={parameters} onParameterChange={handleParameterChange} />
+            <ParameterPanel 
+              parameters={parameters} 
+              onParameterChange={handleParameterChange}
+              activeTab={activeTab}
+            />
           </div>
         </div>
       </div>

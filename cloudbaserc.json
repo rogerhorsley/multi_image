@@ -1,0 +1,37 @@
+{
+  "envId": "cloud1-8gidil0r7a1a2742",
+  "framework": {
+    "name": "react",
+    "plugins": {
+      "client": {
+        "use": "@cloudbase/framework-plugin-website",
+        "inputs": {
+          "buildCommand": "npm run build",
+          "outputPath": "dist",
+          "cloudPath": "/",
+          "ignore": [
+            ".git",
+            ".gitignore",
+            "node_modules",
+            "cloudbaserc.js"
+          ]
+        }
+      },
+      "server": {
+        "use": "@cloudbase/framework-plugin-function",
+        "inputs": {
+          "functionRootPath": "cloudfunctions",
+          "functions": [
+            {
+              "name": "generate_image",
+              "timeout": 60,
+              "envVariables": {},
+              "runtime": "Nodejs18.15",
+              "memorySize": 256
+            }
+          ]
+        }
+      }
+    }
+  }
+}

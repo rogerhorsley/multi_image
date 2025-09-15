@@ -1,0 +1,35 @@
+{
+  "name": "multi-image-generator",
+  "version": "1.0.0",
+  "description": "AI图像生成工具 - CloudBase项目",
+  "main": "src/pages/index.jsx",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && tcb hosting deploy dist -e cloud1-8gidil0r7a1a2742"
+  },
+  "dependencies": {
+    "@cloudbase/js-sdk": "^1.7.7",
+    "@tailwindcss/postcss": "^4.1.13",
+    "lucide-react": "^0.263.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^4.1.13"
+  },
+  "devDependencies": {
+    "@cloudbase/cli": "^1.9.18",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "vite": "^4.4.5"
+  },
+  "keywords": [
+    "ai",
+    "image-generation",
+    "cloudbase",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT"
+}

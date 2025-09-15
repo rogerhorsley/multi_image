@@ -1,0 +1,19 @@
+{
+  "name": "generate_image",
+  "version": "1.0.0",
+  "description": "AI图像生成云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cloudbase",
+    "ai",
+    "image-generation"
+  ],
+  "author": "",
+  "license": "ISC"
+}

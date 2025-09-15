@@ -1,0 +1,4 @@
+Webview errors at url: http://localhost:3001/
+error: 
+ 获取历史记录失败: Error: [PERMISSION_DENIED] Unauthenticated access is denied 请前往云开发AI小助手查看问题：https://tcb.cloud.tencent.com/dev#/helper/copilot?q=PERMISSION_DENIED
+加载历史记录失败: Error: 获取历史记录失败，请稍后重试

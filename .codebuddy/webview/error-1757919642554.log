@@ -1,0 +1,4 @@
+Webview errors at url: http://localhost:3000/
+error: 
+ [Window Error]: [javascript-error]: JavaScript Error: Uncaught TypeError: app.functions is not a function | Url: http://localhost:3000/src/utils/cloudbase.js | File: http://localhost:3000/src/utils/cloudbase.js:12:23
+Uncaught TypeError: app.functions is not a function
